@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2008-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -23,25 +23,28 @@
 
 #include <openmax/il/khronos/v1_x/OMX_Component.h>
 #include <openmax/il/common/omxilutil.h>
+#include <openmax/il/shai/OMX_Symbian_ExtensionNames.h>
 #include "log.h"
 #include "omxilpcmrendererapb0port.h"
 #include "omxilpcmrendererconst.h"
+#include "omxilpcmrendererprocessingfunction.h"
 
 
-COmxILPcmRendererAPB0Port*
-COmxILPcmRendererAPB0Port::NewL(
+COmxILPcmRendererAPB0Port* COmxILPcmRendererAPB0Port::NewL(
 	const TOmxILCommonPortData& aCommonPortData,
 	const RArray<OMX_AUDIO_CODINGTYPE>& aSupportedAudioFormats,
 	const OMX_AUDIO_PARAM_PCMMODETYPE& aParamAudioPcm,
 	const OMX_AUDIO_CONFIG_VOLUMETYPE& aConfigAudioVolume,
-	const OMX_AUDIO_CONFIG_MUTETYPE& aConfigAudioMute)
+	const OMX_AUDIO_CONFIG_MUTETYPE& aConfigAudioMute,
+	COmxILPcmRendererProcessingFunction& aProcessingFunction)
 	{
     DEBUG_PRINTF(_L8("COmxILPcmRendererAPB0Port::NewL"));
 
 	COmxILPcmRendererAPB0Port* self = new (ELeave)COmxILPcmRendererAPB0Port(
 		aParamAudioPcm,
 		aConfigAudioVolume,
-		aConfigAudioMute);
+		aConfigAudioMute,
+		aProcessingFunction);
 	
 	CleanupStack::PushL(self);
 	self->ConstructL(aCommonPortData, aSupportedAudioFormats);
@@ -69,22 +72,40 @@ COmxILPcmRendererAPB0Port::ConstructL(const TOmxILCommonPortData& aCommonPortDat
 	paramPortDefinition.format.audio.bFlagErrorConcealment = OMX_FALSE;
 	paramPortDefinition.format.audio.eEncoding = OMX_AUDIO_CodingPCM;
 	
-	// Init iParamVolumeRamp here...
-	iConfigVolumeRamp.nSize			  = sizeof(OMX_SYMBIAN_AUDIO_CONFIG_PCM_VOLUMERAMP);
+	// Init iConfigVolumeRamp here...
+	iConfigVolumeRamp.nSize			  = sizeof(OMX_SYMBIAN_AUDIO_CONFIG_VOLUMERAMPTYPE);
 	iConfigVolumeRamp.nVersion		  = TOmxILSpecVersion();
 	iConfigVolumeRamp.nPortIndex		  = paramPortDefinition.nPortIndex;
-	iConfigVolumeRamp.nRampDuration	  = 0;
+	iConfigVolumeRamp.nChannel                = 0;
+	iConfigVolumeRamp.bLinear                 = OMX_FALSE;
+	iConfigVolumeRamp.sStartVolume.nValue     = 0;
+	iConfigVolumeRamp.sStartVolume.nMin       = 0;
+	iConfigVolumeRamp.sStartVolume.nMax       = 0;
+	iConfigVolumeRamp.sEndVolume.nValue       = 0;
+	iConfigVolumeRamp.sEndVolume.nMin        = 0;
+	iConfigVolumeRamp.sEndVolume.nMax         = 0;
+	iConfigVolumeRamp.nRampDuration           = 0;
+	iConfigVolumeRamp.bRampTerminate          = OMX_FALSE;
+	iConfigVolumeRamp.sCurrentVolume.nValue   = 0;
+	iConfigVolumeRamp.sCurrentVolume.nMin    = 0;
+	iConfigVolumeRamp.sCurrentVolume.nMax     = 0;
+	iConfigVolumeRamp.nRampCurrentTime        = 0;
+	iConfigVolumeRamp.nRampMinDuration        = 0;
+	iConfigVolumeRamp.nRampMaxDuration        = 0;
+	iConfigVolumeRamp.nVolumeStep             = 0;
 	}
 
 
 COmxILPcmRendererAPB0Port::COmxILPcmRendererAPB0Port(
 	const OMX_AUDIO_PARAM_PCMMODETYPE& aParamAudioPcm,
 	const OMX_AUDIO_CONFIG_VOLUMETYPE& aConfigAudioVolume,
-	const OMX_AUDIO_CONFIG_MUTETYPE& aConfigAudioMute)
+	const OMX_AUDIO_CONFIG_MUTETYPE& aConfigAudioMute,
+	COmxILPcmRendererProcessingFunction& aProcessingFunction)
 	:
 	iParamAudioPcm(aParamAudioPcm),
 	iConfigAudioVolume(aConfigAudioVolume),
-	iConfigAudioMute(aConfigAudioMute)
+	iConfigAudioMute(aConfigAudioMute),
+	iProcessingFunction(aProcessingFunction)
 	{
     DEBUG_PRINTF(_L8("COmxILPcmRendererAPB0Port::COmxILPcmRendererAPB0Port"));
 	}
@@ -200,25 +221,35 @@ COmxILPcmRendererAPB0Port::GetLocalOmxConfigIndexes(RArray<TUint>& aIndexArray) 
 	TInt err = aIndexArray.InsertInOrder(OMX_IndexConfigAudioVolume);
 
 	// Note that index duplication is OK.
-	if (KErrNone == err || KErrAlreadyExists == err)
+	if (KErrNone != err && KErrAlreadyExists != err)
 		{
-		err = aIndexArray.InsertInOrder(OMX_IndexConfigAudioMute);
-
-		if (KErrNone == err || KErrAlreadyExists == err)
-			{
-			err = aIndexArray.InsertInOrder(
-				OMX_SymbianIndexConfigAudioPcmVolumeRamp);
-			}
-
+	    return OMX_ErrorInsufficientResources;
 		}
+	
+	err = aIndexArray.InsertInOrder(OMX_IndexConfigAudioMute);
 
+	if (KErrNone != err && KErrAlreadyExists != err)
+	    {
+	    return OMX_ErrorInsufficientResources;
+	    }
+	
+	err = aIndexArray.InsertInOrder(
+	        OMX_SYMBIANINDEXCONFIGAUDIOPCMVOLUMERAMP);
+                
 	if (KErrNone != err && KErrAlreadyExists != err)
 		{
 		return OMX_ErrorInsufficientResources;
 		}
 
+    err = aIndexArray.InsertInOrder(
+            OMX_SYMBIANINDEXCONFIGAUDIODATAAMOUNT);
+                
+    if (KErrNone != err && KErrAlreadyExists != err)
+        {
+        return OMX_ErrorInsufficientResources;
+        }
+	
 	return OMX_ErrorNone;
-
 	}
 
 
@@ -372,27 +403,64 @@ COmxILPcmRendererAPB0Port::GetConfig(OMX_INDEXTYPE aConfigIndex,
 	OMX_ERRORTYPE omxRetValue = OMX_ErrorNone;
 	switch(aConfigIndex)
 		{
-	case OMX_SymbianIndexConfigAudioPcmVolumeRamp:
+	case OMX_SYMBIANINDEXCONFIGAUDIOPCMVOLUMERAMP:
 		{
 		if (OMX_ErrorNone !=
 			(omxRetValue =
 			 TOmxILUtil::CheckOmxStructSizeAndVersion(
 				 apComponentConfigStructure,
-				 sizeof(OMX_SYMBIAN_AUDIO_CONFIG_PCM_VOLUMERAMP))))
+				 sizeof(OMX_SYMBIAN_AUDIO_CONFIG_VOLUMERAMPTYPE))))
 			{
 			return omxRetValue;
 			}
 
-		OMX_SYMBIAN_AUDIO_CONFIG_PCM_VOLUMERAMP*
+		OMX_SYMBIAN_AUDIO_CONFIG_VOLUMERAMPTYPE*
 			pPcmVolumeRamp
 			= static_cast<
-			OMX_SYMBIAN_AUDIO_CONFIG_PCM_VOLUMERAMP*>(
+			OMX_SYMBIAN_AUDIO_CONFIG_VOLUMERAMPTYPE*>(
 				apComponentConfigStructure);
 
 		*pPcmVolumeRamp = iConfigVolumeRamp;
 		}
 		break;
-				
+
+	case OMX_SYMBIANINDEXCONFIGAUDIODATAAMOUNT:
+		{
+		if (OMX_ErrorNone !=
+		        (omxRetValue =
+		                TOmxILUtil::CheckOmxStructSizeAndVersion(
+		                        apComponentConfigStructure,
+		                        sizeof(OMX_SYMBIAN_AUDIO_CONFIG_PROCESSEDDATAAMOUNTTYPE))))
+		    {
+			return omxRetValue;
+			}
+		
+		OMX_SYMBIAN_AUDIO_CONFIG_PROCESSEDDATAAMOUNTTYPE*
+			pPcmDataAmount
+			= static_cast<
+			OMX_SYMBIAN_AUDIO_CONFIG_PROCESSEDDATAAMOUNTTYPE*>(
+				apComponentConfigStructure);
+
+		TInt bytePlayed = iProcessingFunction.GetBytesPlayed();
+
+        // Convert into OMX_TICKS
+		// #define OMX_TICKS_PER_SECOND 1000000
+		
+#ifndef OMX_SKIP64BIT
+		OMX_TICKS ticks = static_cast<OMX_TICKS>(bytePlayed) * 8 * OMX_TICKS_PER_SECOND / 
+		        static_cast<OMX_TICKS>(iParamAudioPcm.nBitPerSample) / static_cast<OMX_TICKS>(iParamAudioPcm.nSamplingRate);
+		pPcmDataAmount->nProcessedDataAmount = ticks;
+#else
+		TInt64 ticks = static_cast<TInt64>(bytePlayed) * 8 * OMX_TICKS_PER_SECOND/
+		        static_cast<TInt64>(iParamAudioPcm.nBitPerSample) / static_cast<TInt64>(iParamAudioPcm.nSamplingRate);
+
+		pPcmDataAmount->nProcessedDataAmount.nLowPart = ticks & 0xffffffff;
+		pPcmDataAmount->nProcessedDataAmount.nHighPart = ticks >> 32;
+#endif		
+		
+		}
+		break;
+		
 	case OMX_IndexConfigAudioVolume:
 		{
 		if (OMX_ErrorNone !=
@@ -455,21 +523,21 @@ COmxILPcmRendererAPB0Port::SetConfig(OMX_INDEXTYPE aConfigIndex,
 	OMX_ERRORTYPE omxRetValue = OMX_ErrorNone;
 	switch(aConfigIndex)
 		{
-	case OMX_SymbianIndexConfigAudioPcmVolumeRamp:
+	case OMX_SYMBIANINDEXCONFIGAUDIOPCMVOLUMERAMP:
 		{
 		if (OMX_ErrorNone !=
 			(omxRetValue =
 			 TOmxILUtil::CheckOmxStructSizeAndVersion(
 				 const_cast<OMX_PTR>(apComponentConfigStructure),
-				 sizeof(OMX_SYMBIAN_AUDIO_CONFIG_PCM_VOLUMERAMP))))
+				 sizeof(OMX_SYMBIAN_AUDIO_CONFIG_VOLUMERAMPTYPE))))
 			{
 			return omxRetValue;
 			}
 
-		const OMX_SYMBIAN_AUDIO_CONFIG_PCM_VOLUMERAMP*
+		const OMX_SYMBIAN_AUDIO_CONFIG_VOLUMERAMPTYPE*
 			pPcmVolumeRamp
 			= static_cast<
-			const OMX_SYMBIAN_AUDIO_CONFIG_PCM_VOLUMERAMP*>(
+			const OMX_SYMBIAN_AUDIO_CONFIG_VOLUMERAMPTYPE*>(
 				apComponentConfigStructure);
 
 		if (iConfigVolumeRamp.nRampDuration != pPcmVolumeRamp->nRampDuration)
@@ -564,14 +632,21 @@ COmxILPcmRendererAPB0Port::GetExtensionIndex(
 			reinterpret_cast<TUint8*>(aParameterName)));
 
 	TPtrC8 parameterNamePtr(
-		reinterpret_cast<const TUint8*>(sOmxSymbianPcmVolumeRamp));
+		reinterpret_cast<const TUint8*>(OMX_SYMBIAN_INDEX_CONFIG_AUDIO_VOLUMERAMP_NAME));
 
 	if (requestedParameterNamePtr == parameterNamePtr)
 		{
-		*apIndexType =
-			static_cast<OMX_INDEXTYPE>(
-					OMX_SymbianIndexConfigAudioPcmVolumeRamp);
+		*apIndexType = static_cast<OMX_INDEXTYPE>(OMX_SYMBIANINDEXCONFIGAUDIOPCMVOLUMERAMP);
 			
+		return OMX_ErrorNone;
+		}
+	
+	parameterNamePtr.Set(reinterpret_cast<const TUint8*>(OMX_SYMBIAN_INDEX_CONFIG_AUDIO_DATAAMOUNT_NAME));
+
+	if (requestedParameterNamePtr == parameterNamePtr)
+	        {
+		*apIndexType = static_cast<OMX_INDEXTYPE>(OMX_SYMBIANINDEXCONFIGAUDIODATAAMOUNT);
+		
 		return OMX_ErrorNone;
 		}
 

@@ -18,12 +18,12 @@
 
 LOAD_SUITE te_xmlomxclient
 
-START_TESTCASE MM-VIDEO-OMX-FILESOURCE-001-HP
+START_TESTCASE MM-VIDEO-OMX-FILESINK_COMPATIBILITY-001-HP
 	START_TEST_BLOCK 30 te_xmlomxclient c:\omxil\tef\te_omx_filesink.ini
 		CREATE_OBJECT OmxXmlTestWrapper InstanceName
 		COMMAND	InstanceName New c:\omxil\tef\te_omx_filesink_video_compatibility.xml
 		COMMAND InstanceName RunTest Read3GPFormat
 	END_TEST_BLOCK
-END_TESTCASE MM-VIDEO-OMX-FILESOURCE-001-HP
+END_TESTCASE MM-VIDEO-OMX-FILESINK_COMPATIBILITY-001-HP
 
 

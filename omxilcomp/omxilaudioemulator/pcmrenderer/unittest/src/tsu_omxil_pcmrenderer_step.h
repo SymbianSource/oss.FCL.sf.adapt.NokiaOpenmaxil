@@ -25,8 +25,6 @@
 #include "tsu_omxil_component_base.h"
 
 
-// Forward declarations
-class CMMFDescriptorBuffer;
 
 //
 // RAsyncTestStepOmxILPcmRenderer0020
@@ -277,10 +275,9 @@ protected:
 
 
 protected:
-
-	CMMFDescriptorBuffer* ipInputBuffer;
-	CMMFDescriptorBuffer* ipOutputBuffer;
-	RArray<CMMFDescriptorBuffer*> iClockPortBufferPtrArray;
+	HBufC8* ipInputBuffer;
+	HBufC8* ipOutputBuffer;
+	RArray<HBufC8*> iClockPortBufferPtrArray;
 	};
 
 //

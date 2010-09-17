@@ -37,7 +37,6 @@ LIBRARY		        efsrv.lib
 LIBRARY		        ecom.lib
 LIBRARY		        testframeworkclient.lib
 LIBRARY             omxilcomponentcommon.lib
-LIBRARY			    mmfserverbaseclasses.lib
 STATICLIBRARY 	    omxilcomponentif.lib
 
 NOSTRICTDEF

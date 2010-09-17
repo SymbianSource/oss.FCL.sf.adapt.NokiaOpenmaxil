@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
+// Copyright (c) 2008-2010 Nokia Corporation and/or its subsidiary(-ies).
 // All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of "Eclipse Public License v1.0"
@@ -20,14 +20,13 @@
 
 #include <e32base.h>
 #include <e32cmn.h>
-#include <mmf/server/mmfbuffer.h>
-#include <mmf/server/mmfdatabuffer.h>
 
 #include <openmax/il/khronos/v1_x/OMX_Component.h>
 #include <openmax/il/khronos/v1_x/OMX_Types.h>
 
 #include <openmax/il/loader/omxilcomponentif.h>
-#include <openmax/il/extensions/omxilsymbianaudiopcmextensions.h>
+#include <openmax/il/shai/OMX_Symbian_AudioExt.h>
+#include <openmax/il/shai/OMX_Symbian_ExtensionNames.h>
 
 #include "log.h"
 #include "omxilpcmrenderer.hrh"
@@ -1227,21 +1226,20 @@ RAsyncTestStepOmxILPcmRenderer0002::DoRAsyncTestStepOmxILPcmRenderer0002Step01()
 	//
 	// Allocate buffer on input port
 	//
-	TRAPD(err, ipInputBuffer = CMMFDescriptorBuffer::NewL(portParamsInputPort.nBufferSize));
+	TRAPD(err, ipInputBuffer = HBufC8::NewL(portParamsInputPort.nBufferSize));
 	if(err != KErrNone)
 		{
 		return StopTest(KErrGeneral, EFail);
 		}
 
-	TDes8& inputBufferDes = ipInputBuffer->Data();
 
 	if (OMX_ErrorNone != ipCompHandle->UseBuffer(
 			ipCompHandle,
 			&ipBufferHeaderInput,
 			0,					// input port
-			ipInputBuffer,		// pAppPrivate
+			0,		// pAppPrivate
 			portParamsInputPort.nBufferSize,
-			const_cast<TUint8*>(inputBufferDes.Ptr())))
+			const_cast<TUint8*>(ipInputBuffer->Des().Ptr())))
 		{
 		return StopTest(KErrGeneral, EFail);
 		}
@@ -1254,9 +1252,9 @@ RAsyncTestStepOmxILPcmRenderer0002::DoRAsyncTestStepOmxILPcmRenderer0002Step01()
 	
 	for (TInt n = 0; n < bufferCount; n++)
 		{
-		CMMFDescriptorBuffer* bufPtr;
+		HBufC8* bufPtr;
 		
-		TRAPD(err, bufPtr = CMMFDescriptorBuffer::NewL(portParamsInputPort1.nBufferSize));
+		TRAPD(err, bufPtr = HBufC8::NewL(portParamsInputPort1.nBufferSize));
 		
 		if(err != KErrNone)
 			{
@@ -1269,16 +1267,15 @@ RAsyncTestStepOmxILPcmRenderer0002::DoRAsyncTestStepOmxILPcmRenderer0002Step01()
 			return StopTest(KErrGeneral, EFail);
 			}
 		
-		TDes8& inputBufferDes = bufPtr->Data();
 		OMX_BUFFERHEADERTYPE* clockBufPtr;
 		
 		if (OMX_ErrorNone != ipCompHandle->UseBuffer(
 				ipCompHandle,
 				&clockBufPtr,
 				1,					// Clock input port
-				ipInputBuffer,		// pAppPrivate
+				0,		// pAppPrivate
 				portParamsInputPort.nBufferSize,
-				const_cast<TUint8*>(inputBufferDes.Ptr())))
+				const_cast<TUint8*>(bufPtr->Des().Ptr())))
 			{
 			return StopTest(KErrGeneral, EFail);
 			}
@@ -2107,9 +2104,10 @@ RAsyncTestStepOmxILPcmRenderer0005::DoEventHandlerL(OMX_HANDLETYPE /*aComponent*
 					{
 					INFO_PRINTF1(_L("DoEventHandlerL: OMX_StateExecuting [EStateTransitionToIdleComplete]"));
 					iTestState = EStateTransitionToExecutingComplete;
-					CMMFDataBuffer& dataBuffer = *(static_cast<CMMFDataBuffer*>(ipBufferHeaderInput->pInputPortPrivate));
-					ipTestFile->ReadNextBuffer(dataBuffer);
-					ipBufferHeaderInput->nFilledLen = dataBuffer.BufferSize();
+					
+					TPtr8 ptrData(ipBufferHeaderInput->pBuffer, ipBufferHeaderInput->nAllocLen, ipBufferHeaderInput->nAllocLen);
+					ipTestFile->ReadNextBuffer(ptrData);
+					ipBufferHeaderInput->nFilledLen = ptrData.Length();
 
 					// Send a buffer to the input port
 					INFO_PRINTF1(_L("DoEventHandlerL: OMX_StateExecuting [Send a buffer to the input port]"));
@@ -3036,11 +3034,11 @@ RAsyncTestStepOmxILPcmRenderer0008::DoEventHandlerL(OMX_HANDLETYPE /*aComponent*
 					INFO_PRINTF1(_L("DoEventHandlerL: OMX_StateExecuting [EStateTransitionToIdleComplete]"));
 					iTestState = EStateTransitionToExecutingComplete;
 					
-					CMMFDataBuffer& dataBuffer = *(static_cast<CMMFDataBuffer*>(ipBufferHeaderInput->pInputPortPrivate));
-					ipTestFile->ReadNextBuffer(dataBuffer);
+					TPtr8 ptrData(ipBufferHeaderInput->pBuffer, ipBufferHeaderInput->nAllocLen, ipBufferHeaderInput->nAllocLen);
+					ipTestFile->ReadNextBuffer(ptrData);
 					
 					// Send a buffer to the input port
-					ipBufferHeaderInput->nFilledLen = dataBuffer.BufferSize();
+					ipBufferHeaderInput->nFilledLen = ptrData.Length();
 					
 					if (OMX_ErrorNone != ipCompHandle->EmptyThisBuffer(
 							ipCompHandle, ipBufferHeaderInput))
@@ -3087,13 +3085,13 @@ RAsyncTestStepOmxILPcmRenderer0008::DoEmptyBufferDoneL(OMX_HANDLETYPE /*aCompone
     DEBUG_PRINTF(_L8("RAsyncTestStepOmxILPcmRenderer0008::DoEmptyBufferDoneL"));
 	INFO_PRINTF1(_L("DoEmptyBufferDoneL : Callback received "));
 	
-	CMMFDataBuffer& dataBuffer = *(static_cast<CMMFDataBuffer*>(ipBufferHeaderInput->pInputPortPrivate));
-	ipTestFile->ReadNextBuffer(dataBuffer);
+	TPtr8 ptrData(ipBufferHeaderInput->pBuffer, ipBufferHeaderInput->nAllocLen, ipBufferHeaderInput->nAllocLen);
+	ipTestFile->ReadNextBuffer(ptrData);
 	
-	if (dataBuffer.BufferSize() > 0)
+	if (ptrData.Length() > 0)
 		{
 		// Send a buffer to the input port
-		ipBufferHeaderInput->nFilledLen = dataBuffer.BufferSize();
+		ipBufferHeaderInput->nFilledLen = ptrData.Length();
 		
 		if (OMX_ErrorNone != ipCompHandle->EmptyThisBuffer(
 				ipCompHandle, ipBufferHeaderInput))
@@ -3258,11 +3256,11 @@ RAsyncTestStepOmxILPcmRenderer0009::DoEventHandlerL(OMX_HANDLETYPE /*aComponent*
 					INFO_PRINTF1(_L("DoEventHandlerL: OMX_StateExecuting [EStateTransitionToIdleComplete]"));
 					iTestState = EStateTransitionToExecutingComplete;
 					
-					CMMFDataBuffer& dataBuffer = *(static_cast<CMMFDataBuffer*>(ipBufferHeaderInput->pInputPortPrivate));
-					ipTestFile->ReadNextBuffer(dataBuffer);
+					TPtr8 ptrData(ipBufferHeaderInput->pBuffer, ipBufferHeaderInput->nAllocLen, ipBufferHeaderInput->nAllocLen);
+					ipTestFile->ReadNextBuffer(ptrData);
 					
 					// Send a buffer to the input port
-					ipBufferHeaderInput->nFilledLen = dataBuffer.BufferSize();
+					ipBufferHeaderInput->nFilledLen = ptrData.Length();
 					
 					if (OMX_ErrorNone != ipCompHandle->EmptyThisBuffer(
 							ipCompHandle, ipBufferHeaderInput))
@@ -3369,13 +3367,13 @@ RAsyncTestStepOmxILPcmRenderer0009::DoEmptyBufferDoneL(OMX_HANDLETYPE /*aCompone
 			}
 		}
 
-	CMMFDataBuffer& dataBuffer = *(static_cast<CMMFDataBuffer*>(ipBufferHeaderInput->pInputPortPrivate));
-	ipTestFile->ReadNextBuffer(dataBuffer);
+	TPtr8 ptrData(ipBufferHeaderInput->pBuffer, ipBufferHeaderInput->nAllocLen, ipBufferHeaderInput->nAllocLen);
+	ipTestFile->ReadNextBuffer(ptrData);
 	
-	if (dataBuffer.BufferSize() > 0)
+	if (ptrData.Length() > 0)
 		{
 		// Send a buffer to the input port
-		ipBufferHeaderInput->nFilledLen = dataBuffer.BufferSize();
+		ipBufferHeaderInput->nFilledLen = ptrData.Length();
 		
 		if (OMX_ErrorNone != ipCompHandle->EmptyThisBuffer(
 				ipCompHandle, ipBufferHeaderInput))
@@ -3557,11 +3555,11 @@ RAsyncTestStepOmxILPcmRenderer0010::DoEventHandlerL(OMX_HANDLETYPE /*aComponent*
 					INFO_PRINTF1(_L("DoEventHandlerL: OMX_StateExecuting [EStateTransitionToIdleComplete]"));
 					iTestState = EStateTransitionToExecutingComplete;
 					
-					CMMFDataBuffer& dataBuffer = *(static_cast<CMMFDataBuffer*>(ipBufferHeaderInput->pInputPortPrivate));
-					ipTestFile->ReadNextBuffer(dataBuffer);
+					TPtr8 ptrData(ipBufferHeaderInput->pBuffer, ipBufferHeaderInput->nAllocLen, ipBufferHeaderInput->nAllocLen);
+					ipTestFile->ReadNextBuffer(ptrData);
 					
 					// Send a buffer to the input port
-					ipBufferHeaderInput->nFilledLen = dataBuffer.BufferSize();
+					ipBufferHeaderInput->nFilledLen = ptrData.Length();
 					
 					if (OMX_ErrorNone != ipCompHandle->EmptyThisBuffer(
 							ipCompHandle, ipBufferHeaderInput))
@@ -3648,13 +3646,13 @@ RAsyncTestStepOmxILPcmRenderer0010::DoEmptyBufferDoneL(OMX_HANDLETYPE /*aCompone
 		}
 	else
 		{
-		CMMFDataBuffer& dataBuffer = *(static_cast<CMMFDataBuffer*>(ipBufferHeaderInput->pInputPortPrivate));
-		ipTestFile->ReadNextBuffer(dataBuffer);
+        TPtr8 ptrData(ipBufferHeaderInput->pBuffer, ipBufferHeaderInput->nAllocLen, ipBufferHeaderInput->nAllocLen);
+		ipTestFile->ReadNextBuffer(ptrData);
 		
-		if (dataBuffer.BufferSize() > 0)
+		if (ptrData.Length() > 0)
 			{
 			// Send a buffer to the input port
-			ipBufferHeaderInput->nFilledLen = dataBuffer.BufferSize();
+			ipBufferHeaderInput->nFilledLen = ptrData.Length();
 			
 			if (OMX_ErrorNone != ipCompHandle->EmptyThisBuffer(
 					ipCompHandle, ipBufferHeaderInput))
@@ -3810,7 +3808,7 @@ RAsyncTestStepOmxILPcmRenderer0030::KickoffTestL()
 	INFO_PRINTF1(_L("UNIT TEST OMX IL PCM RENDERER : 2.- Repeat these two steps until the whole file has beeen empited "));
 	INFO_PRINTF1(_L("UNIT TEST OMX IL PCM RENDERER : 2a. - Call EmptyThisBuffer on PCM Renderer "));
 	INFO_PRINTF1(_L("UNIT TEST OMX IL PCM RENDERER : 2b. - EmptyBufferDone callback received "));
-	INFO_PRINTF1(_L("UNIT TEST OMX IL PCM RENDERER : 2c. - Get Bytes Played parameter and compare with the bytes readed from file "));
+	INFO_PRINTF1(_L("UNIT TEST OMX IL PCM RENDERER : 2c. - Get Data Amount parameter and compare with the bytes readed from file "));
 	INFO_PRINTF1(_L("UNIT TEST OMX IL PCM RENDERER : 3.- Executing->Idle(BufferFlushing) "));
 	INFO_PRINTF1(_L("UNIT TEST OMX IL PCM RENDERER : 4.- Idle->Loaded(Depopulation) "));
 
@@ -3835,32 +3833,69 @@ RAsyncTestStepOmxILPcmRenderer0030::DoEmptyBufferDoneL(OMX_HANDLETYPE /*aCompone
     DEBUG_PRINTF(_L8("RAsyncTestStepOmxILPcmRenderer0030::DoEmptyBufferDoneL"));
 	INFO_PRINTF1(_L("DoEmptyBufferDoneL : Callback received "));
 	
+	OMX_INDEXTYPE audioSpecificConfigIndex = OMX_IndexMax;
+	if (OMX_ErrorNone != ipCompHandle->GetExtensionIndex(
+							     ipCompHandle,
+							     OMX_SYMBIAN_INDEX_CONFIG_AUDIO_DATAAMOUNT_NAME,
+							     &audioSpecificConfigIndex))
+	  {
+	    return StopTest(KErrGeneral, EFail);
+	  }
+
 	// Check that GetConfig is returning the correct amount of bytes played
-	OMX_SYMBIAN_AUDIO_CONFIG_PCM_BYTESPLAYED bytesPlayedStruct;
-	bytesPlayedStruct.nSize = sizeof(OMX_SYMBIAN_AUDIO_CONFIG_PCM_BYTESPLAYED);
+	OMX_SYMBIAN_AUDIO_CONFIG_PROCESSEDDATAAMOUNTTYPE bytesPlayedStruct;
+	bytesPlayedStruct.nSize = sizeof(OMX_SYMBIAN_AUDIO_CONFIG_PROCESSEDDATAAMOUNTTYPE);
 	bytesPlayedStruct.nVersion = TOmxILSpecVersion();
+	bytesPlayedStruct.nPortIndex = 0;
+
 	if (OMX_ErrorNone != ipCompHandle->GetConfig(ipCompHandle, 
-												 static_cast<OMX_INDEXTYPE>(OMX_SymbianIndexConfigAudioBytesPlayed), 
-												 &bytesPlayedStruct))
+	        audioSpecificConfigIndex, 
+	        &bytesPlayedStruct))
 		{
 		StopTest(KErrGeneral, EFail);
 		}
+
+	OMX_AUDIO_PARAM_PCMMODETYPE pcmModeType;
+	pcmModeType.nSize = sizeof(OMX_AUDIO_PARAM_PCMMODETYPE);
+	pcmModeType.nVersion = TOmxILSpecVersion();
+	pcmModeType.nPortIndex = 0;
+
+	if (OMX_ErrorNone != ipCompHandle->GetParameter(ipCompHandle, 
+	        static_cast<OMX_INDEXTYPE>(OMX_IndexParamAudioPcm), 
+	        &pcmModeType))
+	    {
+	    StopTest(KErrGeneral, EFail);
+	    }
+	   
 	//check the number of bytes played by the device corresponds
 	//to the number of bytes readed from file
 	//allow an extra margin of one buffer.
 	TUint maxAllowedBytesPlayed =ipTestFile->GetPos();
-	if (bytesPlayedStruct.nBytesPlayed > maxAllowedBytesPlayed)
+
+	// Convert into OMX_TICKS
+	
+#ifndef OMX_SKIP64BIT	
+	OMX_TICKS ticks = static_cast<OMX_TICKS>(maxAllowedBytesPlayed) * 8 * OMX_TICKS_PER_SECOND / 
+	        static_cast<OMX_TICKS>(pcmModeType.nBitPerSample) / static_cast<OMX_TICKS>(pcmModeType.nSamplingRate);
+#else
+	TInt64 ticks = static_cast<TInt64>(maxAllowedBytesPlayed) * 8 * OMX_TICKS_PER_SECOND/
+	        static_cast<TInt64>(pcmModeType.nBitPerSample) / static_cast<TInt64>(pcmModeType.nSamplingRate);
+#endif
+        
+	if (bytesPlayedStruct.nProcessedDataAmount > ticks)
 		{
 		StopTest(KErrGeneral, EFail);
 		}
 	
-	CMMFDataBuffer& dataBuffer = *(static_cast<CMMFDataBuffer*>(ipBufferHeaderInput->pInputPortPrivate));
-	ipTestFile->ReadNextBuffer(dataBuffer);
+	INFO_PRINTF2(_L("DoEmptyBufferDoneL : bytesPlayedStruct.nProcessedDataAmount=%d "), bytesPlayedStruct.nProcessedDataAmount);
 	
-	if (dataBuffer.BufferSize() > 0)
+	TPtr8 ptrData(ipBufferHeaderInput->pBuffer, ipBufferHeaderInput->nAllocLen, ipBufferHeaderInput->nAllocLen);
+	ipTestFile->ReadNextBuffer(ptrData);
+	
+	if (ptrData.Length() > 0)
 		{
 		// Send a buffer to the input port
-		ipBufferHeaderInput->nFilledLen = dataBuffer.BufferSize();
+		ipBufferHeaderInput->nFilledLen = ptrData.Length();
 		
 		if (OMX_ErrorNone != ipCompHandle->EmptyThisBuffer(
 				ipCompHandle, ipBufferHeaderInput))
@@ -3931,33 +3966,43 @@ RAsyncTestStepOmxILPcmRenderer0031::DoEmptyBufferDoneL(OMX_HANDLETYPE /*aCompone
 	iNumOfEmptiedBuffers++;
 	if (iNumOfEmptiedBuffers == 5)
 		{
-		OMX_SYMBIAN_AUDIO_CONFIG_PCM_VOLUMERAMP volumeRampStruct;
-		volumeRampStruct.nSize = sizeof(OMX_SYMBIAN_AUDIO_CONFIG_PCM_VOLUMERAMP);
+		OMX_INDEXTYPE audioSpecificConfigIndex = OMX_IndexMax;
+		if (OMX_ErrorNone != ipCompHandle->GetExtensionIndex(
+								     ipCompHandle,
+								     OMX_SYMBIAN_INDEX_CONFIG_AUDIO_VOLUMERAMP_NAME,
+								     &audioSpecificConfigIndex))
+			{
+			  return StopTest(KErrGeneral, EFail);
+			}
+
+		OMX_SYMBIAN_AUDIO_CONFIG_VOLUMERAMPTYPE volumeRampStruct;
+		volumeRampStruct.nSize = sizeof(OMX_SYMBIAN_AUDIO_CONFIG_VOLUMERAMPTYPE);
 		volumeRampStruct.nVersion = TOmxILSpecVersion();
 		volumeRampStruct.nPortIndex = 0;
+
 		if (OMX_ErrorNone != ipCompHandle->GetConfig(ipCompHandle, 
-													 static_cast<OMX_INDEXTYPE>(OMX_SymbianIndexConfigAudioPcmVolumeRamp), 
+                                                     audioSpecificConfigIndex, 
 													 &volumeRampStruct))
 			{
 			StopTest(KErrGeneral, EFail);
 			}
 		volumeRampStruct.nRampDuration = 2000000;	// 2 second
 		if (OMX_ErrorNone != ipCompHandle->SetConfig(ipCompHandle, 
-													 static_cast<OMX_INDEXTYPE>(OMX_SymbianIndexConfigAudioPcmVolumeRamp), 
-													 &volumeRampStruct))
+							     audioSpecificConfigIndex, 
+							     &volumeRampStruct))
 			{
 			StopTest(KErrGeneral, EFail);
 			}
 		INFO_PRINTF1(_L("Volume ramp set"));
 		}
 
-	CMMFDataBuffer& dataBuffer = *(static_cast<CMMFDataBuffer*>(ipBufferHeaderInput->pInputPortPrivate));
-	ipTestFile->ReadNextBuffer(dataBuffer);
+	TPtr8 ptrData(ipBufferHeaderInput->pBuffer, ipBufferHeaderInput->nAllocLen, ipBufferHeaderInput->nAllocLen);
+	ipTestFile->ReadNextBuffer(ptrData);
 	
-	if (dataBuffer.BufferSize() > 0)
+	if (ptrData.Length() > 0)
 		{
 		// Send a buffer to the input port
-		ipBufferHeaderInput->nFilledLen = dataBuffer.BufferSize();
+		ipBufferHeaderInput->nFilledLen = ptrData.Length();
 		
 		if (OMX_ErrorNone != ipCompHandle->EmptyThisBuffer(
 				ipCompHandle, ipBufferHeaderInput))

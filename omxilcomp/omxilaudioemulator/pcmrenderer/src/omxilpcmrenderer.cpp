@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2008-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -21,13 +21,12 @@
  @internalComponent
 */
 #include <openmax/il/common/omxilspecversion.h>
+#include <openmax/il/common/omxilconfigmanager.h>
 #include <openmax/il/common/omxilclientclockport.h>
 #include <openmax/il/loader/omxilsymbiancomponentif.h>
 #include "log.h"
 #include "omxilpcmrenderer.h"
 #include "omxilpcmrendererapb0port.h"
-#include "omxilpcmrendererprocessingfunction.h"
-#include "omxilpcmrendererconfigmanager.h"
 #include "omxilpcmrenderer.hrh"
 
 
@@ -107,9 +106,10 @@ void COmxILPcmRenderer::ConstructL(OMX_HANDLETYPE aComponent)
 					);
 							
 	// ...create PCM renderer component ports (no OPB0 port)
-	COmxILPcmRendererAPB0Port* pb0Port = ConstructAPB0PortL();
+	COmxILPcmRendererProcessingFunction* ptr = static_cast<COmxILPcmRendererProcessingFunction*>(pProcessingFunction);
+	COmxILPcmRendererAPB0Port* pb0Port = ConstructAPB0PortL(*ptr);
 	CleanupStack::PushL(pb0Port);
-	
+
 	// ..  and add them to the port manager...
 	User::LeaveIfError(AddPort(pb0Port, OMX_DirInput));
 	CleanupStack::Pop(); //pb0Port
@@ -123,8 +123,7 @@ void COmxILPcmRenderer::ConstructL(OMX_HANDLETYPE aComponent)
 	CleanupClosePushL(componentRoles);
 	User::LeaveIfError(componentRoles.Append(&KSymbianOmxILPcmRendererRole()));
 
-	COmxILConfigManager* pConfigManager = COmxILPcmRendererConfigManager::NewL(
-		*static_cast<COmxILPcmRendererProcessingFunction*>(pProcessingFunction),
+	COmxILConfigManager* pConfigManager = COmxILConfigManager::NewL(
 		KSymbianOmxILPcmRendererName,
 		TOmxILVersion(iComponentVersionMajor,
 					  iComponentVersionMinor,
@@ -154,7 +153,7 @@ COmxILPcmRenderer::~COmxILPcmRenderer()
 	}
 
 
-COmxILPcmRendererAPB0Port* COmxILPcmRenderer::ConstructAPB0PortL() const
+COmxILPcmRendererAPB0Port* COmxILPcmRenderer::ConstructAPB0PortL(COmxILPcmRendererProcessingFunction& aProcessingFunction) const
 	{
     DEBUG_PRINTF(_L8("COmxILPcmRenderer::ConstructAPB0PortL"));
 
@@ -207,7 +206,8 @@ COmxILPcmRendererAPB0Port* COmxILPcmRenderer::ConstructAPB0PortL() const
                                                                         supportedAudioFormats,
                                                                         paramPcmModeType,
                                                                         configAudioVolume,
-                                                                        configAudioMute);
+									configAudioMute, 
+									aProcessingFunction);
 	
 	CleanupStack::PopAndDestroy(&supportedAudioFormats);
 	return apb0Port;

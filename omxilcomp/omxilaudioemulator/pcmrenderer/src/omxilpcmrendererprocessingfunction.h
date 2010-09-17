@@ -24,7 +24,6 @@
 #ifndef OMXILPCMRENDERERPROCESSINGFUNCTION_H
 #define OMXILPCMRENDERERPROCESSINGFUNCTION_H
 
-#include <mmf/server/mmfdatabuffer.h>
 #include "omxilpcmrendererconst.h"
 #include <openmax/il/common/omxilprocessingfunction.h>
 #include <e32msgqueue.h> 
@@ -106,7 +105,7 @@ private:
 		OMX_BUFFERHEADERTYPE* GetCurrentBuffer();
 		TInt GetBytesPlayed();
 		void ConfigAudioRamper(TInt64 aRampTime);
-		TBool RampAudio(CMMFDataBuffer* aBuffer);
+		TBool RampAudio(TDes8& aBuffer);
 		TBool ConstructAndStartUpdateTimer();
 		void ProcessNextBuffer();
 		void PlayData();

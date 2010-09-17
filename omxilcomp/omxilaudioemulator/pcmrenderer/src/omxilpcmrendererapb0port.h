@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2008-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -25,7 +25,9 @@
 #define OMXILPCMRENDERERAPB0PORT_H
 
 #include <openmax/il/common/omxilaudioport.h>
-#include <openmax/il/extensions/omxilsymbianaudiopcmextensions.h>
+#include <openmax/il/shai/OMX_Symbian_AudioExt.h>
+
+class COmxILPcmRendererProcessingFunction;
 
 class COmxILPcmRendererAPB0Port : public COmxILAudioPort
 	{
@@ -37,7 +39,8 @@ public:
 		const RArray<OMX_AUDIO_CODINGTYPE>& aSupportedAudioFormats,
 		const OMX_AUDIO_PARAM_PCMMODETYPE& aParamAudioPcm,
 		const OMX_AUDIO_CONFIG_VOLUMETYPE& aConfigAudioVolume,
-		const OMX_AUDIO_CONFIG_MUTETYPE& aConfigAudioMute);
+		const OMX_AUDIO_CONFIG_MUTETYPE& aConfigAudioMute,
+		COmxILPcmRendererProcessingFunction& aProcessingFunction);
 
 
 	~COmxILPcmRendererAPB0Port();
@@ -68,7 +71,8 @@ protected:
 	COmxILPcmRendererAPB0Port(
 		const OMX_AUDIO_PARAM_PCMMODETYPE& aParamAudioPcm,
 		const OMX_AUDIO_CONFIG_VOLUMETYPE& aConfigAudioVolume,
-		const OMX_AUDIO_CONFIG_MUTETYPE& aConfigAudioMute);
+		const OMX_AUDIO_CONFIG_MUTETYPE& aConfigAudioMute,
+		COmxILPcmRendererProcessingFunction& aProcessingFunction);
 
 	void ConstructL(const TOmxILCommonPortData& aCommonPortData, const RArray<OMX_AUDIO_CODINGTYPE>& aSupportedAudioFormats);
 
@@ -82,11 +86,11 @@ protected:
 protected:
 
 	OMX_AUDIO_PARAM_PCMMODETYPE iParamAudioPcm;
-	OMX_SYMBIAN_AUDIO_CONFIG_PCM_VOLUMERAMP iConfigVolumeRamp;
+	OMX_SYMBIAN_AUDIO_CONFIG_VOLUMERAMPTYPE iConfigVolumeRamp;
 	OMX_AUDIO_CONFIG_VOLUMETYPE iConfigAudioVolume;
 	OMX_AUDIO_CONFIG_MUTETYPE iConfigAudioMute;
 	RBuf8 iMimeTypeBuf;
-
+	COmxILPcmRendererProcessingFunction& iProcessingFunction;
 	};
 
 #endif // OMXILPCMRENDERERAPB0PORT_H

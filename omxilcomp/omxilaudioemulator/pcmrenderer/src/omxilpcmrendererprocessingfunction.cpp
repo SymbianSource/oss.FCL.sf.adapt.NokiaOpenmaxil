@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2008-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -28,7 +28,7 @@
 #include "log.h"
 #include <openmax/il/common/omxilcallbacknotificationif.h>
 #include <openmax/il/common/omxilclockcomponentcmdsif.h>
-#include <openmax/il/extensions/omxilsymbianaudiopcmextensions.h>
+#include <openmax/il/shai/OMX_Symbian_AudioExt.h>
 #include "omxilpcmrendererprocessingfunction.h"
 
 const TInt COmxILPcmRendererProcessingFunction::CPFHelper::KMaxMsgQueueEntries;
@@ -312,12 +312,12 @@ COmxILPcmRendererProcessingFunction::ConfigIndication(OMX_INDEXTYPE aConfigIndex
     OMX_ERRORTYPE err = OMX_ErrorNone;
     switch(aConfigIndex)
 	{
-	case OMX_SymbianIndexConfigAudioPcmVolumeRamp:
+	case OMX_SYMBIANINDEXCONFIGAUDIOPCMVOLUMERAMP:
 		{
-		const OMX_SYMBIAN_AUDIO_CONFIG_PCM_VOLUMERAMP*
+		const OMX_SYMBIAN_AUDIO_CONFIG_VOLUMERAMPTYPE*
 			pPcmVolumeRamp
 			= static_cast<
-			const OMX_SYMBIAN_AUDIO_CONFIG_PCM_VOLUMERAMP*>(
+			const OMX_SYMBIAN_AUDIO_CONFIG_VOLUMERAMPTYPE*>(
 					apComponentConfigStructure);
 
 		if (iPFHelper->SetVolumeRamp(pPcmVolumeRamp->nRampDuration) != KErrNone)
@@ -741,13 +741,12 @@ void COmxILPcmRendererProcessingFunction::CAudioDevice::PlayData()
 
 	iParent.iBuffersToEmpty.Remove(0);
 
-	CMMFDataBuffer* mmfSrcBuffer = static_cast<CMMFDataBuffer*>(iCurrentBuffer->pInputPortPrivate);
-	mmfSrcBuffer->Data().SetLength(iCurrentBuffer->nFilledLen);
-
+	TPtr8 ptrData(iCurrentBuffer->pBuffer, iCurrentBuffer->nFilledLen, iCurrentBuffer->nFilledLen);
+	
 	// Attenuate the amplitude of the samples if volume ramping has been changed
 	if (iRampAudioSample)
 		{
-		iRampAudioSample = RampAudio(mmfSrcBuffer);
+		iRampAudioSample = RampAudio(ptrData);
 		}
 
 	// First, check whether the buffer length is sufficient not to cause underflows in the device driver
@@ -757,7 +756,7 @@ void COmxILPcmRendererProcessingFunction::CAudioDevice::PlayData()
 	TBool appendBuffer = (!isFilledLengthSufficient || iCachedPlayBuffer.Length() > 0) ? ETrue : EFalse;
 	if (!appendBuffer)
 		{
-		SendBufferToSoundDevice(mmfSrcBuffer->Data());
+        SendBufferToSoundDevice(ptrData);
 		}
 	else
 		{
@@ -774,7 +773,7 @@ void COmxILPcmRendererProcessingFunction::CAudioDevice::PlayData()
 				}
 			}
 		
-		iCachedPlayBuffer.Append(mmfSrcBuffer->Data());
+		iCachedPlayBuffer.Append(ptrData);
 				
 		// If we have sufficient length aggregated, play the cached buffer
 		// Also if this is the last buffer, we have to play it now, there's nothing left to cache
@@ -1348,16 +1347,16 @@ void COmxILPcmRendererProcessingFunction::CAudioDevice::ConfigAudioRamper(TInt64
 	iSkip = ETrue;
 	}
 
-TBool COmxILPcmRendererProcessingFunction::CAudioDevice::RampAudio(CMMFDataBuffer* aBuffer)
+TBool COmxILPcmRendererProcessingFunction::CAudioDevice::RampAudio(TDes8& aBuffer)
 	{
 	TInt i=0;
-	TInt length = aBuffer->Data().Length()>>1;
+	TInt length = aBuffer.Length()>>1;
 	if (length == 0)
 		{
 		return EFalse;
 		}
 		
-	TInt16* sample = REINTERPRET_CAST(TInt16*,&aBuffer->Data()[0]);
+	TInt16* sample = REINTERPRET_CAST(TInt16*,&aBuffer[0]);
 	TInt64 theResult(0);
 	while ((i < length) && (iRampIncr < iRampSamples))
 		{
@@ -1585,7 +1584,7 @@ TInt COmxILPcmRendererProcessingFunction::CPFHelper::CloseDeviceOnError()
 		TProcMessage message;
 		message.iType = ECloseDeviceOnError;
 		TInt error = iMsgQueue.Send(message);
-		if (KErrNone != error)
+		if (KErrNone == error)
 			{
 			// only wait if the message was sent into the queue...
 			iCallerSemaphore.Wait();

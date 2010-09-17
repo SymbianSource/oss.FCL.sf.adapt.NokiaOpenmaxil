@@ -18,7 +18,7 @@
 
 LOAD_SUITE te_xmlomxclient
 
-START_TESTCASE MM-AUDIO-OMX-FILESOURCE-001-HP
+START_TESTCASE MM-AUDIO-OMX-FILESINK-001-HP
 	START_TEST_BLOCK 30 te_xmlomxclient c:\omxil\tef\te_omx_filesink.ini
 		CREATE_OBJECT OmxXmlTestWrapper InstanceName
 		COMMAND	InstanceName New c:\omxil\tef\te_omx_filesink_audio.xml
@@ -29,6 +29,6 @@ START_TESTCASE MM-AUDIO-OMX-FILESOURCE-001-HP
 		COMMAND InstanceName RunTest ChangeInvalidEncodeType_filesink
 		COMMAND InstanceName RunTest BasicOperation_nofilename_filesink
 	END_TEST_BLOCK
-END_TESTCASE MM-AUDIO-OMX-FILESOURCE-001-HP
+END_TESTCASE MM-AUDIO-OMX-FILESINK-001-HP
 
 

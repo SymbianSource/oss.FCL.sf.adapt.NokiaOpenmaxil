@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2008-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -51,5 +51,17 @@ static const TInt KPcmRendererTimePlayedDelay = 998113;
 const TBool KDefaultMuted = EFalse;
 
 const RMdaDevSound::TMdaSoundEncoding KDefaultEncoding = RMdaDevSound::EMdaSoundEncoding16BitPCM;
+
+/**
+ * Custom index used by Symbian's OpenMAX IL PCM renderer to select the
+ * structure for setting/getting a Volume Ramp configuration data item
+ */
+#define OMX_SYMBIANINDEXCONFIGAUDIOPCMVOLUMERAMP 0x7F000002
+
+/**
+ * Custom index used by Symbian's OpenMAX IL PCM renderer to select the
+ * structure for getting a Data Amount configuration data item
+ */
+#define OMX_SYMBIANINDEXCONFIGAUDIODATAAMOUNT 0x7F000003
 
 #endif /*OMXILPCMRENDERERCONST_H_*/

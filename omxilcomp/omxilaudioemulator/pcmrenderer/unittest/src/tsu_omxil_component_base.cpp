@@ -18,9 +18,6 @@
  @internalComponent
 */
 
-#include <mmf/server/mmfbuffer.h>
-#include <mmf/server/mmfdatabuffer.h>
-
 #include <ecom/ecom.h>
 #include <openmax/il/khronos/v1_x/OMX_Component.h>
 #include <openmax/il/loader/omxilcomponentif.h>
@@ -106,18 +103,17 @@ CAacTestFile::ReadTestFileInBuffer(const TDesC& aFileName)
 
 
 void
-CAacTestFile::ReadNextBuffer(CMMFBuffer& aDataBuffer)
+CAacTestFile::ReadNextBuffer(TDes8& aDataBuffer)
     {
     DEBUG_PRINTF(_L8("CAacTestFile::ReadNextBuffer"));
 
-	CMMFDataBuffer* pDataBuffer = static_cast<CMMFDataBuffer*>(&aDataBuffer);
     while (ETrue)
 		{
 		// check if finished
 		if (iFinished)
 			{
 			DEBUG_PRINTF(_L8("CAacTestFile::ReadNextBuffer : File finished"));
-			pDataBuffer->Data().Zero();
+			aDataBuffer.Zero();
 			return;
 			}
 
@@ -125,19 +121,18 @@ CAacTestFile::ReadNextBuffer(CMMFBuffer& aDataBuffer)
 		if (iSourceFileReadPos < srcLength)
 			{
 			TInt size = srcLength;
-			if (size > pDataBuffer->Data().MaxLength())
+			if (size > aDataBuffer.MaxLength())
 				{
-				size = pDataBuffer->Data().MaxLength();
+				size = aDataBuffer.MaxLength();
 				}
-			Mem::Copy((TAny*)pDataBuffer->Data().Ptr(), (TAny*)iSourceFile->Mid(iSourceFileReadPos).Ptr(), size);
-			pDataBuffer->Data().SetLength(size);
+			Mem::Copy((TAny*)aDataBuffer.Ptr(), (TAny*)iSourceFile->Mid(iSourceFileReadPos).Ptr(), size);
+			aDataBuffer.SetLength(size);
 			iSourceFileReadPos += size;
 			DEBUG_PRINTF2(_L8("CAacTestFile::ReadNextBuffer : data read = [%d] bytes"), iSourceFileReadPos);
-			DEBUG_PRINTF2(_L8("CAacTestFile::ReadNextBuffer : pDataBuffer->BufferSize = [%u] bytes"), pDataBuffer->BufferSize());
+			DEBUG_PRINTF2(_L8("CAacTestFile::ReadNextBuffer : aDataBuffer Size = [%u] bytes"), aDataBuffer.Length());
 			if (iSourceFileReadPos >= srcLength)
 				{
 				DEBUG_PRINTF(_L8("CAacTestFile::ReadNextBuffer : end of data"));
-				pDataBuffer->SetLastBuffer(ETrue);
 				iFinished = ETrue;
 				}
 			return;
@@ -226,24 +221,22 @@ CAacOutputTestFile::SetUpOutputFile(const TDesC& aFileName)
 	}
 
 TInt
-CAacOutputTestFile::WriteDataToFile(const CMMFBuffer& aDataBuffer)
+CAacOutputTestFile::WriteDataToFile(const TDesC8& aDataBuffer)
 	{
     DEBUG_PRINTF(_L8("CAacOutputTestFile::WriteDataToFile"));
 
-	const CMMFDataBuffer& dataBuffer = static_cast<const CMMFDataBuffer&>(aDataBuffer);
-	const TDesC8& data = dataBuffer.Data();
 
 	TInt err = KErrNone;
-	err = iOutputFile.Write(data);
+	err = iOutputFile.Write(aDataBuffer);
 	if(err != KErrNone)
 		{
 		return err;
 		}
 	// keep record of amount of data and the number of buffers written out
-	iWrittenDataTotal += data.Size();
+	iWrittenDataTotal += aDataBuffer.Size();
 	iBuffersWrittenCount++;
 
-    DEBUG_PRINTF2(_L8("CAacOutputTestFile::WriteDataToFile : data.Size()[%d]"), data.Size());
+    DEBUG_PRINTF2(_L8("CAacOutputTestFile::WriteDataToFile : aDataBuffer.Size()[%d]"), aDataBuffer.Size());
     DEBUG_PRINTF2(_L8("CAacOutputTestFile::WriteDataToFile : iWrittenDataTotal[%d]"), iWrittenDataTotal);
 	DEBUG_PRINTF2(_L8("CAacOutputTestFile::WriteDataToFile : iBuffersWrittenCount[%d]"), iBuffersWrittenCount);
 

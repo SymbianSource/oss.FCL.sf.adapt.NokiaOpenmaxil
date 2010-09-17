@@ -32,7 +32,6 @@
 class COmxILComponentIf;
 struct OMX_COMPONENTTYPE;
 class RAsyncTestStepOmxILComponentBase;
-class CMMFBuffer;
 
 
 class CAacTestFile : public CBase
@@ -45,7 +44,7 @@ public:
 	~CAacTestFile();
 
 	TInt ReadTestFileInBuffer(const TDesC& aFileName);
-    void ReadNextBuffer(CMMFBuffer& aDataBuffer);
+    void ReadNextBuffer(TDes8& aDataBuffer);
     void ResetPos();
     TInt GetPos();
 
@@ -74,7 +73,7 @@ public:
 	~CAacOutputTestFile();
 
 	TInt SetUpOutputFile(const TDesC& aFileName);
-	TInt WriteDataToFile(const CMMFBuffer& aDataBuffer);
+	TInt WriteDataToFile(const TDesC8& aDataBuffer);
 	TInt AddWavHeader();
 	void CloseOutputFile();
 
