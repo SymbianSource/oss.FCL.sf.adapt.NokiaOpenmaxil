@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+// Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
 // All rights reserved.
 // This component and the accompanying materials are made available
 // under the terms of "Eclipse Public License v1.0"
@@ -18,18 +18,14 @@
 
 LOAD_SUITE te_xmlomxclient
 
-START_TESTCASE MM-VIDEO-OMX-FILESINK-001-HP
+START_TESTCASE MM-GRAPHIC-OMX-FILESINK-001-HP
 	START_TEST_BLOCK 30 te_xmlomxclient c:\omxil\tef\te_omx_filesink.ini
 		CREATE_OBJECT OmxXmlTestWrapper InstanceName
-		COMMAND	InstanceName New c:\omxil\tef\te_omx_filesink_video.xml
-		COMMAND InstanceName RunTest BasicOperation
-		COMMAND InstanceName RunTest GetFilenameNoFileSet_filesink
-		COMMAND InstanceName RunTest GetFilenameOverFlow_filesink
+		COMMAND	InstanceName New c:\omxil\tef\te_omx_filesink_graphic.xml
 		COMMAND InstanceName RunTest ChangeEncodeType_filesink
-		COMMAND InstanceName RunTest ChangeInvalidEncodeType_filesink
-		COMMAND InstanceName RunTest BasicOperation_nofilename_filesink
-		COMMAND InstanceName RunTest CTC_coverage_filesink
+		COMMAND InstanceName RunTest ChangeVideoPortFormat_filesink
+		COMMAND InstanceName RunTest GetExtensionIndex_filesink
 	END_TEST_BLOCK
-END_TESTCASE MM-VIDEO-OMX-FILESINK-001-HP
+END_TESTCASE MM-GRAPHIC-OMX-FILESINK-001-HP
 
 

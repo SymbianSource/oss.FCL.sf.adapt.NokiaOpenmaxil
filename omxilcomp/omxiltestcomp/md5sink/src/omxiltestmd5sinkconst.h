@@ -20,6 +20,6 @@
 
 const OMX_U32 KMD5SINK_OPB0PORT_INDEX = 0;
 const OMX_U32 KMinBuffers = 1;
-const OMX_U32 KMinBufferSize = 1;
+const OMX_U32 KMinBufferSize = 1500;
 
 #endif /* OMXILTESTMD5SINKCONST_H_ */

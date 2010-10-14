@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+	Copyright (c) NOKIA 2010. All rights reserved.
+	file Source Sink Video tests for OpenMAX IL.
+	
+
+	Expected Result:
+	ChangeEncodeType_filesink		Pass		
+        ChangeVideoPortFormat_filesink          Pass
+        GetExtensionIndex_filesink              Pass
+
+        Objective: The following tests are mainly to to improve CTC coverage in COmxILVideoPort
+-->
+
+<TestSet>
+	<Test name="ChangeEncodeType_filesink">
+	<!-- expected result :Pass -->
+		<LoadComponent comp="filesink" name="OMX.SYMBIAN.VIDEO.GRAPHICSINK" />
+		<!--Pass-->
+ 		<SetVideoPortDef port="filesink:0" codingType="unused" /> 
+      		<IgnoreEvent comp="filesink" event="Error" nData1="0x8000100A" nData2="0" nData3="0"/>
+                <AllTransition state="Invalid" />
+                <EnablePort port="filesink:0" expectedomxerr="OMX_ErrorInvalidState"/>
+                <DisablePort port="filesink:0" expectedomxerr="OMX_ErrorInvalidState"/>
+	</Test>
+
+	<Test name="ChangeVideoPortFormat_filesink">
+	<!-- expected result :Pass -->
+		<LoadComponent comp="filesink" name="OMX.SYMBIAN.VIDEO.GRAPHICSINK" />
+		<!--Pass-->
+ 		<SetVideoPortFormat port="filesink:0" colorFormat="CbYCrY" codingType="unused" framerate="0" /> 
+      		<IgnoreEvent comp="filesink" event="Error" nData1="0x8000100A" nData2="0" nData3="0"/>
+                <AllTransition state="Invalid" />
+ 		<SetVideoPortFormat port="filesink:0" colorFormat="CbYCrY" codingType="unused" framerate="0" expectedomxerr="OMX_ErrorInvalidState" /> 
+                <CheckState comp="filesink" state="Invalid" />
+ 		<CheckCommonScale port="filesink:0" width="0" height="0" expectedomxerr="OMX_ErrorInvalidState"/> 
+ 		<SetCommonScale port="filesink:0" width="0" height="0" expectedomxerr="OMX_ErrorInvalidState"/> 
+	</Test>
+
+	<Test name="GetExtensionIndex_filesink">
+	<!-- expected result :Pass -->
+		<LoadComponent comp="filesink" name="OMX.SYMBIAN.VIDEO.GRAPHICSINK" />
+		<!--Pass-->
+ 		<GetExtensionIndex comp="filesink" parametername="OMX.Symbian.Index.Config.Sharedchunkmetadata" expectedomxerr="OMX_ErrorNone"/> 
+      		<IgnoreEvent comp="filesink" event="Error" nData1="0x8000100A" nData2="0" nData3="0"/>
+                <AllTransition state="Invalid" />
+ 		<GetExtensionIndex comp="filesink" parametername="OMX.Symbian.Index.Config.Sharedchunkmetadata" expectedomxerr="OMX_ErrorInvalidState"/> 
+ 		<FlushBuffer port="filesink:0" expectedomxerr="OMX_ErrorInvalidState" /> 
+                <EnablePort port="filesink:0" expectedomxerr="OMX_ErrorInvalidState"/>
+	</Test>
+</TestSet>
+
+
+

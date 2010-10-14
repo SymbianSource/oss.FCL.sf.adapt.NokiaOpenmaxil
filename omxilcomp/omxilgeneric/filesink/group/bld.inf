@@ -47,5 +47,7 @@ PRJ_TESTEXPORTS
 ../tests/unit/te_omx_filesink_video.xml				/epoc32/winscw/c/omxil/tef/te_omx_filesink_video.xml			
 ../tests/unit/te_omx_filesink_video_compatibility.script	/epoc32/winscw/c/omxil/tef/te_omx_filesink_video_compatibility.script	
 ../tests/unit/te_omx_filesink_video_compatibility.xml		/epoc32/winscw/c/omxil/tef/te_omx_filesink_video_compatibility.xml		
+../tests/unit/te_omx_filesink_graphic.script		/epoc32/winscw/c/omxil/tef/te_omx_filesink_graphic.script
+../tests/unit/te_omx_filesink_graphic.xml		/epoc32/winscw/c/omxil/tef/te_omx_filesink_graphic.xml
 
 #endif

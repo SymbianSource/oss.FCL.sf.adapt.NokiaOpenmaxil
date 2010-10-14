@@ -32,5 +32,14 @@ Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
         </component>
       </module>
     </layer>
+
+    <layer name="test_ncp_layer">
+    	<module name="openmaxil.nokia">
+        <component name="omxilcomp">
+          <unit unitID="omxilcomp.omxiltestcomp_test" name="OpenMAX IL Test Components" mrp="" bldFile="&layer_real_source_path;/omxilcomp/omxiltestcomp/group"/>
+        </component>
+      </module>
+    </layer>
+
   </systemModel>
 </SystemDefinition>

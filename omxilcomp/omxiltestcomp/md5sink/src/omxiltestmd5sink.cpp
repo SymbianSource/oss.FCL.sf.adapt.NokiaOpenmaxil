@@ -81,7 +81,7 @@ void COmxILTestMD5Sink::ConstructL(OMX_HANDLETYPE hComponent)
     COmxILComponent::ConstructL(hComponent);
     
 	// STEP 2: Create the call backs holder...
-    MOmxILCallbackNotificationIf* callbackNotificationIf=CreateCallbackManagerL(COmxILComponent::EOutofContext);
+    MOmxILCallbackNotificationIf* callbackNotificationIf=CreateCallbackManagerL(COmxILComponent::EInContext);
 
 	// STEP 3: Create the MD5 sink-specific Processing Function...
     COmxILTestMD5SinkProcessingFunction* pProcessingFunction = COmxILTestMD5SinkProcessingFunction::NewL(*callbackNotificationIf);
